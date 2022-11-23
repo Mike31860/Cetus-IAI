@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launch Driver",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-alias=2 -Program-analysis ./NPB3.3-SER-C/CG/cg.c",
+        }
+    ]
+}
