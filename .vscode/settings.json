@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "globals.h": "c",
+        "type.h": "c",
+        "npbparams.h": "c"
+    }
+}

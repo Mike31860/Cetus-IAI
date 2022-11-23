@@ -117,6 +117,17 @@ public class ProgramFeatures {
 		// }
 	}
 
+	public void startAnalysis(ArrayList<Loop> all_loops){
+
+		for (int i = 0; i < all_loops.size(); i++) {
+			
+			
+		}
+
+
+
+	}
+
 	public void ProgramAnalysis(ArrayList<Loop> all_loops, Map<Loop, AnalysisLoopTarget> loopsAnalysis,
 			Map<Loop, Map<String, Set<Expression>>> ReductionLoops,
 			Map<Loop, List<ReductionDTO>> LoopReductionStatements,
@@ -328,7 +339,7 @@ public class ProgramFeatures {
 		Expression result = assignmentExpressionsMaps.get(upperBoundExpression);
 		if (result != null) {
 			upperBoundExpression = result;
-			numberIterations += upperBoundExpression.toString();
+			//numberIterations += upperBoundExpression.toString();
 			// findNumberIterations(upperBoundExpression, assignmentExpressionsMaps);
 
 		}
