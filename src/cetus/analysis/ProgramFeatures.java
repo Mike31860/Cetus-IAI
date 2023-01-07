@@ -99,6 +99,7 @@ public class ProgramFeatures {
 			e.printStackTrace();
 		}
 		// debug = PrintTools.getVerbosity();
+		startAnalysis(all_loops);
 		ProgramAnalysis(all_loops, loopsAnalysis, ReductionLoops, LoopReductionStatements, assignmentExpressionsMaps);
 
 	}
