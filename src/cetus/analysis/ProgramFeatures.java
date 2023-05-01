@@ -121,9 +121,15 @@ public class ProgramFeatures {
 						+
 						",No of Long Operation,No of Short Operation,Big O Notation,No of *,No of -, No of +,No of Function Calls Side effect Free,Data dependence Free,Ratio of Reduction Statements,Ratio of Flow Dependences Remaining ");
 		// debug = PrintTools.getVerbosity();
+<<<<<<< HEAD
 		// ProgramAnalysis(all_loops, loopsAnalysis, ReductionLoops,
 		// LoopReductionStatements, assignmentExpressionsMaps);
 		startAnalysis(program, ((TranslationUnit) program.getChildren().get(0)).getOutputFilename());
+=======
+		startAnalysis(all_loops);
+		ProgramAnalysis(all_loops, loopsAnalysis, ReductionLoops, LoopReductionStatements, assignmentExpressionsMaps);
+
+>>>>>>> 45f84f5dc82a5a82ac6e7e459b877c9b51b6ce0d
 	}
 
 	public void startAnalysis(Program program, String fileName) {
