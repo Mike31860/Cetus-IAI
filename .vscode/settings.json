@@ -2,6 +2,10 @@
     "files.associations": {
         "globals.h": "c",
         "type.h": "c",
-        "npbparams.h": "c"
-    }
+        "npbparams.h": "c",
+        "print_results.h": "c",
+        "randdp.h": "c",
+        "time.h": "c"
+    },
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/Users/Migue/OneDrive/Escritorio/SNU_NPB-1.0.3/NPB3.3-SER-C/CG/**",
+                "C:/MinGW/include/sys/**",
+                "C:/Users/Migue/OneDrive/Escritorio/SNU_NPB-1.0.3/NPB3.3-SER-C/common/**"
+
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+           /*  "compilerPath": "C:\\MinGW\\bin\\gcc.exe", */
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "windows-gcc-x86",
+            "compilerArgs": [
+                "../common/print_results.c",
+                "../common/randdp.c",
+                "../common/c_timers.c",
+                "../common/wtime.c",
+                "-lm"
+            ]
+        }
+    ],
+    "version": 4
+}

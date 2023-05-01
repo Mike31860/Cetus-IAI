@@ -159,7 +159,8 @@ public class SimpleExpression implements
     }
 
     // Constructs a simple expression from the given Cetus expression
-    protected SimpleExpression(Expression e) {
+    //Miguel changed it from protected to public
+    public SimpleExpression(Expression e) {
         this();
         
         if (e instanceof UnaryExpression) {
@@ -374,7 +375,8 @@ public class SimpleExpression implements
     * Returns a reconstructed Cetus expression from the simple expression.
     * @return the Cetus expression.
     */
-    protected Expression getExpression() {
+    //Miguel changed it from protected to publi
+    public Expression getExpression() {
         Expression ret = null;
         if (children.isEmpty()) {
             ret = expr.clone();
@@ -676,7 +678,8 @@ public class SimpleExpression implements
     }
 
     // Normalizes this simple expression recursively.
-    protected SimpleExpression normalize() {
+    //Miguel changed it to publi
+    public SimpleExpression normalize() {
         SimpleExpression ret = new SimpleExpression(this);
 
         for (int i = 0; i < children.size(); i++) {

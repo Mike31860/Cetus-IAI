@@ -9,6 +9,9 @@ import java.util.*;
  */
 public class LoopTools {
 
+    public static final String[] IOOPERAIONS = { "scanf", "printf", "fprintf", "fscanf", "getchar", "putchar",
+            "fopen", "fclose", "fwrite", "fgets", "fputs" };
+
     // Flag for checking if all loops are named.
     private static boolean is_loop_named = false;
     private Map<Loop, Set<Symbol>> pri_map;
@@ -76,6 +79,7 @@ public class LoopTools {
             RangeDomain rd = RangeAnalysis.query((Statement) loop);
             loopInc = rd.substituteForward(loopInc);
         }
+
         return loopInc;
     }
 
@@ -208,40 +212,42 @@ public class LoopTools {
          * getnumberOperationsLoop(neeLoop);
          * }
          */
+        if (loop instanceof ForLoop) {
+            DFIterator<Statement> ifter = new DFIterator<Statement>(loop.getBody(), Statement.class);
+            ForLoop forLo = (ForLoop) loop;
+            forLo.getOperations().put('+', 0);
+            forLo.getOperations().put('-', 0);
+            forLo.getOperations().put('*', 0);
+            forLo.getOperations().put('/', 0);
+            ifter.next();
+            while (ifter.hasNext()) {
+                Statement statement = ifter.next();
+                if (!(statement.toString().startsWith("{") || statement.toString().startsWith("#pragma")
+                        || statement.toString().startsWith("for"))) {
 
-        DFIterator<Statement> ifter = new DFIterator<Statement>(loop.getBody(), Statement.class);
-        ForLoop forLo = (ForLoop) loop;
-        forLo.getOperations().put('+', 0);
-        forLo.getOperations().put('-', 0);
-        forLo.getOperations().put('*', 0);
-        forLo.getOperations().put('/', 0);
-        ifter.next();
-        while (ifter.hasNext()) {
-            Statement statement = ifter.next();
-            if (!(statement.toString().startsWith("{")||statement.toString().startsWith("#pragma") || statement.toString().startsWith("for"))) {
+                    for (int i = 0; i < statement.toString().length(); i++) {
+                        char a = statement.toString().charAt(i);
+                        if (a == '+') {
+                            int numb = forLo.getOperations().get('+') + 1;
+                            forLo.getOperations().put('+', numb);
+                        } else if (a == '-') {
+                            int numb = forLo.getOperations().get('-') + 1;
+                            forLo.getOperations().put('-', numb);
 
-                for (int i = 0; i < statement.toString().length(); i++) {
-                    char a = statement.toString().charAt(i);
-                    if (a == '+') {
-                        int numb = forLo.getOperations().get('+') + 1;
-                        forLo.getOperations().put('+', numb);
-                    } else if (a == '-') {
-                        int numb = forLo.getOperations().get('-') + 1;
-                        forLo.getOperations().put('-', numb);
+                        } else if (a == '*') {
+                            int numb = forLo.getOperations().get('*') + 1;
+                            forLo.getOperations().put('*', numb);
 
-                    } else if (a == '*') {
-                        int numb = forLo.getOperations().get('*') + 1;
-                        forLo.getOperations().put('*', numb);
+                        } else if (a == '/') {
+                            int numb = forLo.getOperations().get('/') + 1;
+                            forLo.getOperations().put('/', numb);
 
-                    } else if (a == '/') {
-                        int numb = forLo.getOperations().get('/') + 1;
-                        forLo.getOperations().put('/', numb);
-
+                        }
                     }
+
                 }
 
             }
-
         }
 
     }
@@ -454,7 +460,8 @@ public class LoopTools {
             return true;
         }
     }
-//Miguel
+
+    // Miguel
     public static int numberFunctionCall(Loop loop) {
         int ret = 0;
         if (loop instanceof ForLoop) {
@@ -479,7 +486,8 @@ public class LoopTools {
         }
         return stamt;
     }
-//Miguel
+
+    // Miguel
     public int calculateNumberOfPrivateVariables(Loop loop) {
 
         pri_map.put(loop, new LinkedHashSet<Symbol>());
@@ -987,6 +995,16 @@ public class LoopTools {
         }
     }
 
+    //Miguel
+    public static Boolean constainsWhileLoop(Loop loop) {
+        if (loop instanceof ForLoop) {
+            DFIterator<WhileLoop> iter = new DFIterator<WhileLoop>(loop.getBody(),   WhileLoop.class);
+            iter.pruneOn(Loop.class);
+            return iter.hasNext();
+        }
+        return false;
+    }
+
     public static boolean containsControlFlowModifierOtherThanBreakStmt(Loop loop) {
         if (loop instanceof ForLoop) {
             DFIterator<Statement> iter = new DFIterator<Statement>(loop.getBody(), Statement.class);
@@ -1035,10 +1053,15 @@ public class LoopTools {
     }
 
     // Miguel
-    public int numberIOoperations(Loop loop) {
+    public static int numberIOoperations(Loop loop) {
         int number = 0;
-        if (loop.toString().contains("print")) {
-            number++;
+        ArrayList<String> IO = new ArrayList<String>(Arrays.asList(IOOPERAIONS));
+        for (int i = 0; i < IO.size(); i++) {
+            String element = IO.get(i);
+            if (loop.toString().contains(element)) {
+                number++;
+
+            }
         }
         return number;
     }
@@ -1554,5 +1577,224 @@ public class LoopTools {
         }
         return str.toString();
     }
+
+    // Miguel
+    public static int calculateNumberStatements(Loop loop) {
+        if (loop instanceof ForLoop) {
+            DFIterator<Statement> ifter = new DFIterator<Statement>(loop.getBody(), Statement.class);
+            int numberStatements = ifter.getList().size() - 1;
+            return numberStatements;
+        }
+        return 0;
+
+    }
+
+    // Miguel
+    public static int getNumberParallelizableCall(Loop loop) {
+        if (loop instanceof ForLoop) {
+            DFIterator<FunctionCall> iter = new DFIterator<FunctionCall>(loop, FunctionCall.class);
+            int number = 0;
+            while (iter.hasNext()) {
+                FunctionCall fc = iter.next();
+                if (StandardLibrary.isSideEffectFree(fc)) {
+                    number++;
+                }
+            }
+            return number;
+        }
+        return 0;
+    }
+
+    // Miguel
+    public static ArrayList<ArrayAccess> getArrayAccess(Loop loop) {
+        if (loop instanceof ForLoop) {
+            DFIterator<ArrayAccess> iter = new DFIterator<ArrayAccess>(loop, ArrayAccess.class);
+            ArrayList<ArrayAccess> arrayAccess = new ArrayList<ArrayAccess>();
+            /* int arrayAccess = 0; */
+            while (iter.hasNext()) {
+                ArrayAccess arrayAccessElement = iter.next();
+                arrayAccess.add(0, arrayAccessElement);
+            }
+            return arrayAccess;
+        }
+        return null;
+    }
+
+    // Miguel
+    public static int getNumberAssigmentExpressions(Loop loop) {
+        if (loop instanceof ForLoop) {
+            DFIterator<AssignmentExpression> iter = new DFIterator<AssignmentExpression>(loop.getBody(),
+                    AssignmentExpression.class);
+            int assigmentExpression = 0;
+            while (iter.hasNext()) {
+                AssignmentExpression fc = iter.next();
+                System.out.println("AssigmentExrpession: " + fc.toString() + "\n");
+                assigmentExpression++;
+
+            }
+            // HashMap<String, Integer> Identifiers = getNumberOperations(loop);
+            return assigmentExpression;
+        }
+        return 0;
+    }
+
+    //Miguel
+
+    public static void identifyBinaryExpressions(Loop loop){
+        if (loop instanceof ForLoop)
+        {
+            DFIterator<BinaryExpression> binaryExpressions = new DFIterator<BinaryExpression>(loop.getBody(),
+            AssignmentExpression.class);
+            while (binaryExpressions.hasNext())
+            {
+                BinaryExpression expressions = binaryExpressions.next();
+
+
+            }
+
+
+        }
+
+
+
+
+    }
+
+    // Miguel
+    public static HashMap<String, Integer> getNumberOperations(Loop loop) {
+        if (loop instanceof ForLoop) {
+            DFIterator<AssignmentExpression> iter = new DFIterator<AssignmentExpression>(loop.getBody(),
+                    AssignmentExpression.class);
+
+            HashMap<String, Integer> Identifiers = new HashMap<>();
+            Identifiers.put("SHORT", 0);
+            Identifiers.put("INTEGER", 0);
+            Identifiers.put("FLOAT", 0);
+            Identifiers.put("DOUBLE", 0);
+            Identifiers.put("LONG", 0);
+            Identifiers.put("UNSIGNED", 0);
+            while (iter.hasNext()) {
+                AssignmentExpression fc = iter.next();
+                Expression lhs = fc.getLHS();
+                Expression rhs = fc.getRHS();
+                ArrayList<Expression> list = new ArrayList<Expression>();
+                //Check for ArrayAccess what type is it
+                list = getIdentifiers(list, rhs);
+                for (int i = 0; i < list.size(); i++) {
+                    String dataType = getTypeSize(list.get(i));
+                    System.out.println("The datatype is " + dataType);
+                    int number = Identifiers.get(dataType) + 1;
+                    Identifiers.replace(dataType, number);
+
+                }
+            }
+            return Identifiers;
+        }
+        return null;
+
+    }
+
+    // Miguel
+    public static boolean containIfStatements(Loop loop) {
+        if (loop instanceof ForLoop) {
+            DFIterator<IfStatement> ifStm = new DFIterator<IfStatement>(loop.getBody(),
+                    AssignmentExpression.class);
+            return ifStm.hasNext();
+        }
+        return false;
+    }
+
+    public static ArrayList<Expression> getIdentifiers(ArrayList<Expression> list,
+            Expression exp) {
+        int i = 0;
+        for (i = 0; i < exp.getChildren().size(); i++) {
+            Expression child = (Expression) exp.getChildren().get(i);
+            System.out.println(child.toString() + "\n");
+            if (child instanceof ArrayAccess || child instanceof Identifier || child instanceof FloatLiteral
+                    || child instanceof IntegerLiteral) {
+                list.add(child);
+            } else {
+                getIdentifiers(list, child);
+            }
+        }
+
+        return list;
+
+    }
+
+    public static final String getTypeSize(Expression expre) {
+        int typeSize;
+        List<?> types = new ArrayList<>();
+        Specifier type;
+
+        if (expre instanceof ArrayAccess) {
+            ArrayAccess array = (ArrayAccess) expre;
+            types = ((Identifier) array.getArrayName()).getSymbol().getTypeSpecifiers();
+            // list.add((Identifier) array.getArrayName());
+        } else if (expre instanceof Identifier) {
+            Identifier ident = (Identifier) expre;
+            types = ident.getSymbol().getTypeSpecifiers();
+        } else if (expre instanceof FloatLiteral) {
+            return "FLOAT";
+        } else if (expre instanceof IntegerLiteral) {
+            return "INTEGER";
+        }
+        String typeData = "";
+        for (int i = 0; i < types.size(); i++) {
+            type = (Specifier) types.get(i);
+
+            if (type == Specifier.SHORT)
+                typeData = "SHORT";
+            else if (type == Specifier.INT)
+                typeData = "INTEGER";
+            else if (type == Specifier.LONG)
+                typeData = "LONG";
+            else if (type == Specifier.UNSIGNED)
+                typeData = "UNSIGNED";
+            else if (type == Specifier.FLOAT)
+                typeData = "FLOAT";
+            else if (type == Specifier.DOUBLE)
+                typeData = "DOUBLE";
+
+        }
+        return typeData;
+
+    }
+
+    // public int getNumberBitsPerIteration(){
+    // int typeSize;
+    // List<?> types;
+    // Specifier type;
+
+    // types = ((Identifier) array.getArrayName()).getSymbol().getTypeSpecifiers();
+    // type = (Specifier) types.get(0);
+
+    // if (type == Specifier.BOOL)
+    // typeSize = 1;
+    // else if (type == Specifier.CHAR)
+    // typeSize = 8;
+    // else if (type == Specifier.WCHAR_T)
+    // typeSize = 32;
+    // else if (type == Specifier.SHORT)
+    // typeSize = 16;
+    // else if (type == Specifier.INT)
+    // typeSize = 32;
+    // else if (type == Specifier.LONG)
+    // typeSize = 32;
+    // else if (type == Specifier.SIGNED)
+    // typeSize = 32;
+    // else if (type == Specifier.UNSIGNED)
+    // typeSize = 32;
+    // else if (type == Specifier.FLOAT)
+    // typeSize = 32;
+    // else if (type == Specifier.DOUBLE)
+    // typeSize = 64;
+    // else if (type == Specifier.VOID)
+    // typeSize = 8;
+    // else
+    // typeSize = 32;
+    // return typeSize;
+
+    // }
 
 }

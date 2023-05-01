@@ -8,12 +8,15 @@ import cetus.entities.ReductionDTO;
 import cetus.gui.CetusGUI;
 import cetus.gui.CetusGUITools;
 import cetus.gui.ThreadUpdate;
+import cetus.hir.DFIterator;
 import cetus.hir.Expression;
 import cetus.hir.ForLoop;
 import cetus.hir.Loop;
 import cetus.hir.PrintTools;
+import cetus.hir.Procedure;
 import cetus.hir.Program;
 import cetus.hir.Statement;
+import cetus.hir.StatementExpression;
 import cetus.hir.Symbol;
 import cetus.hir.SymbolTools;
 import cetus.hir.Tools;
@@ -41,7 +44,7 @@ import javax.swing.plaf.synth.SynthStyleFactory;
  */
 public class Driver {
 
-	//Miguel added
+	// Miguel added
 	private Map<Expression, Expression> assignmentExpressionsMaps;
 
 	/**
@@ -191,7 +194,8 @@ public class Driver {
 		options.add(options.TRANSFORM, "normalize-loops",
 				"Normalize for loops so they begin at 0 and have a step of 1");
 		if ((System.getProperty("os.name").toLowerCase()).indexOf("win") >= 0)
-			options.add(options.UTILITY, "preprocessor", "cpp.exe -I ./NPB3.3-SER-C/CG", "command",
+			options.add(options.UTILITY, "preprocessor",
+					"cpp.exe -I C:/Users/Migue/OneDrive/Escritorio/SNU_NPB-1.0.3/NPB3.3-SER-C/CG", "command",
 					"Set the preprocessor command to use");
 		else
 			options.add(options.UTILITY, "preprocessor", "cpp -C -I.", "command",
@@ -290,6 +294,7 @@ public class Driver {
 						+ "      =0 force to disable\n" + "      =1 comment out existing OpenMP pragmas\n"
 						+ "      =2 remove existing OpenMP pragmas\n"
 						+ "      =3 remove existing OpenMP and Cetus pragmas\n" + "      =4 keep all pragmas");
+		
 		options.add(options.TRANSFORM, "profile-loops", null, "4", "N",
 				"Inserts loop-profiling calls (ON=4), =5|6 may be unsafe\n"
 						+ "      =1 every loop          =2 outermost loop\n"
@@ -329,7 +334,17 @@ public class Driver {
 
 		options.add(options.TRANSFORM, "loop_interchange",
 				"Exchanges the order of two iteration variables used by a nested loop");
-		options.add(options.ANALYSIS, "Program-analysis", "Gather Static features of a loop");
+				
+		options.add(options.ANALYSIS, "program-analysis", "Gather Static features of a loop");
+
+		options.add(options.ANALYSIS, "DataMining-analysis", "Gather information");
+		
+		options.add(options.TRANSFORM, "profileLoop-timer", null, "1",
+				"N",
+				"Annotate loops with Timmer decisions (ON=1)\n" + "      =1 outermost loop\n"
+						+ "      =2 timmer only  innermost loops\n");
+
+	
 	}
 
 	/**
@@ -690,51 +705,18 @@ public class Driver {
 	 * Runs analysis and optimization passes on the program.
 	 */
 	public void runPasses() {
-		// System.out.println("here is");
-		// System.out.println(program.toString()+"AAA"+program.toString().length());
-		// System.out.println("here is");
 
-		// PrintTools.printlnStatus("[Driver] print all options before option
-		// dependences analysis:\n"+options.dumpOptions(),4);
+		if (getOptionValue("profileLoop-timer") != null) {
+			LoopTimerProfiler loopTimer = new LoopTimerProfiler(program);
+			TransformPass.run(loopTimer);
+		}
+		else{
 
-		// -------------- dependences test is not needed any more, since
-		// -parallelize-loops=1 is default now
-		// so all 7 prerequisites (plus profitable-omp) for parallelize-loops are moved
-		// into Cetus initialization now.
-		// /* check for option dependences */
-		// /* in each set of option strings, the first option requires the
-		// rest of the options to be set for it to run effectively */
-		// String[][] pass_prerequisites = {
-		// // inliner internally handles it -- no need for pass dependency
-		// //{"inline",
-		// // "tsingle-call","tsingle-return"},
-		// {"parallelize-loops",
-		// "teliminate-branch","alias","ddt","privatize","reduction","induction","ompGen"},
-		// //{"loop-interchange", //loop-interchange not supported now 11/14/2012
-		// // "ddt"}
-		// };
-		// for (String[] pass_prerequisite : pass_prerequisites) {
-		// if (getOptionValue(pass_prerequisite[0]) != null &&
-		// !getOptionValue(pass_prerequisite[0]).equals("0")) {//use "0" as a value for
-		// disable
-		// PrintTools.printlnStatus("\n[Driver] turning on prerequested options for
-		// -"+pass_prerequisite[0]
-		// +"="+getOptionValue(pass_prerequisite[0])+":",0);
-		// for (int j = 1; j < pass_prerequisite.length; ++j) {
-		// if (getOptionValue(pass_prerequisite[j]) == null) {
-		// System.out.println("[Driver] turning on required pass "
-		// + pass_prerequisite[j] + " for "
-		// + pass_prerequisite[0]);
-		// options.setValue(pass_prerequisite[j]);
-		// } else PrintTools.printlnStatus("[Driver] prerequested option
-		// -"+pass_prerequisite[j]
-		// +"="+getOptionValue(pass_prerequisite[j])+" exists",0);
-		// }
-		// PrintTools.printlnStatus("",0);
-		// }
-		// }
+		if (getOptionValue("DataMining-analysis") != null) {
 
+			DataMining programm = new DataMining(program);
 
+		}
 		PrintTools.printlnStatus("[Driver] print all options :\n" + options.dumpOptions(), 4);
 		if (getOptionValue("teliminate-branch") != null && !getOptionValue("teliminate-branch").equals("0")) {
 			TransformPass.run(new BranchEliminator(program));
@@ -815,17 +797,27 @@ public class Driver {
 			TransformPass.run(new LoopProfiler(program));
 		}
 
-		if (getOptionValue("Program-analysis") != null) {
-		
-			//DependencesAnalysis dependences = new DependencesAnalysis(program);
-			//dependences.analyzeProcedure(program, all_loops);
-			ProgramFeatures programm=new ProgramFeatures(program, all_loops, loopsAnalysis, ReductionLoops, LoopReductionStatements, assignmentExpressionsMaps);
-		
+		if (getOptionValue("program-analysis") != null) {
+
+			ProgramFeatures programm = new ProgramFeatures(program, all_loops, loopsAnalysis, ReductionLoops,
+					LoopReductionStatements, assignmentExpressionsMaps);
+
 		}
-		
+	}
+
+		/*
+		 * if (getOptionValue("DataMining-analysis") != null) {
+		 * 
+		 * 
+		 * DataMining programm = new DataMining(program, all_loops, loopsAnalysis,
+		 * ReductionLoops,
+		 * LoopReductionStatements, assignmentExpressionsMaps);
+		 * 
+		 * }
+		 */
 		//
 
-	//	ProgramAnalysis();
+		// ProgramAnalysis();
 	}
 
 	/**
@@ -841,8 +833,6 @@ public class Driver {
 	public static boolean isIncluded(String name, String hir_type, String hir_name) {
 		return options.isIncluded(name, hir_type, hir_name);
 	}
-
-	
 
 	/**
 	 * Implementation of file filter for handling wild card character and other

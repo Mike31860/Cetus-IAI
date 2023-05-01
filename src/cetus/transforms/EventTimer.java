@@ -266,13 +266,17 @@ public class EventTimer extends TransformPass {
             for (String name : event_names) {
                 codes.add("    \"" + name + "\", ");
             }
+
+
             codes.add("    \"PROGRAM\"");
             codes.add("};");
             codes.add(prof_name + ".num_events = " + (num_events + 1) + ";");
-            codes.add("cetus_init_timers(&" + prof_name + ", " + prof_name +
-                    "_names);");
-            codes.add("cetus_tic(&" + prof_name + ", " + num_events + ");");
+            codes.add("cetus_init_timers(&" + prof_name + ", " + prof_name + "_names);");
+             codes.add("cetus_tic(&" + prof_name + ", " + num_events + ");");
             codes.add("#endif /* " + header + " */");
+
+          
+
             Statement first_stmt =
                     getFirstStatementAfterDeclaration(main_proc.getBody());
             AnnotationStatement note_stmt =
@@ -282,12 +286,20 @@ public class EventTimer extends TransformPass {
             } else {
                 main_proc.getBody().addStatementBefore(first_stmt, note_stmt);
             }
+            System.out.println(first_proc);
             codes.clear();
+            
+            
             // creates/inserts exiting code
             codes.add("#ifdef " + header);
             codes.add("cetus_toc(&" + prof_name + ", " + num_events + ");");
             codes.add("cetus_print_timers(&" + prof_name + ", stderr);");
             codes.add("#endif");
+
+     
+
+
+
             // program exit
             for (Statement exit : exit_stmts) {
                 exit.annotateBefore(new CodeAnnotation(genCode(codes)));
@@ -304,7 +316,10 @@ public class EventTimer extends TransformPass {
             if (!(last_stmt instanceof ReturnStatement)) {
                 last_stmt.annotateAfter(new CodeAnnotation(genCode(codes)));
             }
+            System.out.println(first_proc);
         }
+
+       
     }
 
     /**
@@ -329,8 +344,7 @@ public class EventTimer extends TransformPass {
                     String fcall = "";
                     String name = event.getName(), command = event.getCommand();
                     if (command.equals("start")) {
-                        fcall = "cetus_tic(&" + prof_name + ", " +
-                                (num_events++) + ");";
+                        fcall = "cetus_tic(&" + prof_name + ", " +  (num_events++) + ");";
                         event_names.add(name);
                     } else if (command.equals("stop")) {
                         int event_num = event_names.indexOf(name);
@@ -355,6 +369,8 @@ public class EventTimer extends TransformPass {
                     new CodeAnnotation(genCode(headercode))));
         }
     }
+
+   
 
     /** Returns the first statement after declaration part */
     private static Statement

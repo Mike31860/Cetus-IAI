@@ -17,11 +17,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
+import java.util.Map.Entry;
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.hamcrest.core.IsInstanceOf;
 
 import cetus.application.AnalysisLoopTarget;
 import cetus.codegen.ProfitableOMP;
+import cetus.entities.LoopTarget;
 import cetus.entities.ReductionDTO;
 import cetus.exec.Driver;
 import cetus.hir.AccessExpression;
@@ -57,6 +63,7 @@ import cetus.hir.SymbolTable;
 import cetus.hir.SymbolTools;
 import cetus.hir.Symbolic;
 import cetus.hir.Tools;
+import cetus.hir.TranslationUnit;
 import cetus.hir.Traversable;
 import cetus.hir.UnaryExpression;
 import cetus.hir.UnaryOperator;
@@ -68,12 +75,18 @@ public class ProgramFeatures {
 	public static final String PATTERN1 = "#,##0.00;(#,##0.00)";
 
 	// Miguel Added
-	;
+
 	private FileWriter myWriter;
+
+	private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
 
 	public static Set<Symbol> pri_set;
 
 	private ArrayList<AnalysisLoopTarget> loops_Features;
+
+	private Map<Loop, Map<String, Set<Expression>>> reductionLoops;
+
+	private ArrayList<Loop> all_loops = new ArrayList<Loop>();
 
 	// Pass name
 	private static final String tag = "[ProgramAnalysis]";
@@ -83,14 +96,16 @@ public class ProgramFeatures {
 			Map<Loop, List<ReductionDTO>> LoopReductionStatements,
 			Map<Expression, Expression> assignmentExpressionsMaps) {
 
+		setLogger();
+		reductionLoops = ReductionLoops;
 		loops_Features = new ArrayList<AnalysisLoopTarget>();
 		try {
-			File myObj = new File("C://Users//Migue//Desktop//TestNewScript//bashFiles//filename.txt");
+			File myObj = new File("C:/Users/Migue/OneDrive/Escritorio/WorkSpaceMiguel/bashFiles/Results.txt");
 			if (myObj.createNewFile()) {
 				System.out.println("File created: " + myObj.getName());
-				myWriter = new FileWriter("C://Users//Migue//Desktop//TestNewScript//bashFiles//filename.txt");
+				myWriter = new FileWriter("C:/Users/Migue/OneDrive/Escritorio/WorkSpaceMiguel/bashFiles/Results.txt");
 			} else {
-				myWriter = new FileWriter("C://Users//Migue//Desktop//TestNewScript//bashFiles//filename.txt");
+				myWriter = new FileWriter("C:/Users/Migue/OneDrive/Escritorio/WorkSpaceMiguel/bashFiles/Results.txt");
 				System.out.println("File already exists.");
 			}
 
@@ -98,33 +113,170 @@ public class ProgramFeatures {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		logger.info(
+				"Application Name, DataSize, LoopId,Number of Iterations, total of Iterations, Number of Loads ,Number of Stores,Number of Instructions,Number of Statements, Loopness Level,"
+						+
+						"No of Bits per iteration,No of Times a Data Type Changed,No of Operation Type (Integer),No of Float Operation Type,No of Double Operation Type,No of Long Double Operation"
+						+
+						",No of Long Operation,No of Short Operation,Big O Notation,No of *,No of -, No of +,No of Function Calls Side effect Free,Data dependence Free,Ratio of Reduction Statements,Ratio of Flow Dependences Remaining ");
 		// debug = PrintTools.getVerbosity();
-		ProgramAnalysis(all_loops, loopsAnalysis, ReductionLoops, LoopReductionStatements, assignmentExpressionsMaps);
-
+		// ProgramAnalysis(all_loops, loopsAnalysis, ReductionLoops,
+		// LoopReductionStatements, assignmentExpressionsMaps);
+		startAnalysis(program, ((TranslationUnit) program.getChildren().get(0)).getOutputFilename());
 	}
 
-	public void start() {
-		// System.out.println(PrintTools.)
-		// DFIterator<Procedure> iter = new DFIterator<Procedure>(program,
-		// Procedure.class);
-		// iter.pruneOn(Procedure.class);
-		// while (iter.hasNext()) {
-		// Procedure p = iter.next();
-		// System.out.println("Procedure eee");
-		// System.out.println(p.toString());
-		// System.out.println("Procedure eee");
-		// analyzeProcedure(p);
-		// }
-	}
-
-	public void startAnalysis(ArrayList<Loop> all_loops){
-
-		for (int i = 0; i < all_loops.size(); i++) {
-			
-			
+	public void startAnalysis(Program program, String fileName) {
+		DFIterator<Loop> iter = new DFIterator<Loop>(program, Loop.class);
+		iter.pruneOn(Loop.class);
+		iter.pruneOn(StatementExpression.class);
+		while (iter.hasNext()) {
+			Loop neeLoop = iter.next();
+			addAllLoopNest(neeLoop);
 		}
+		for (int i = 0; i < all_loops.size(); i++) {
+			gatherFeatures(all_loops.get(i), fileName);
+		}
+	}
 
+	public void gatherFeatures(Loop loop, String fileName) {
+		if (LoopTools.isCanonical(loop)) {
+			LoopTarget targetLoop = new LoopTarget();
 
+			// Gather the number of iterations
+			Expression upperBoundExpression = LoopTools.getUpperBoundExpression(loop);
+			Expression lowerBound = LoopTools.getLowerBoundExpression(loop);
+			Expression stride = LoopTools.getIncrementExpression(loop);
+			Expression Substraction = Symbolic.subtract(upperBoundExpression, lowerBound);
+			Expression numI = Symbolic.add(Substraction, stride);
+			Expression NumberIterations = Symbolic.divide(numI, stride);
+
+			// mirar
+			targetLoop.setLoopId(LoopTools.getLoopName((Statement) loop));
+			targetLoop.setNumberIterations(NumberIterations.toString());
+			// Notes
+			// Number of loads everything that is read
+			// Type of Operations
+
+			targetLoop.setTotalArrayAccess(LoopTools.getArrayAccess(loop).size());
+			// Number of reads, number of declared variables + number of arrayAcess
+
+			// Ratio of Reduction Statements
+			Map<String, Set<Expression>> reductionStatementsLoop = reductionLoops.get(loop);
+			if (reductionStatementsLoop != null) {
+				int numberReductionStatements = iterateReductionVariableLoop(reductionStatementsLoop);
+				targetLoop.setNumberReductionStatements(numberReductionStatements);
+
+			}
+
+			targetLoop.setNumberStores(LoopTools.getNumberAssigmentExpressions(loop));
+			targetLoop.setNumberStatements(LoopTools.calculateNumberStatements(loop));
+			if (targetLoop.getNumberReductionStatements() > 0) {
+				targetLoop.setRatioRT(targetLoop.getNumberStatements() / targetLoop.getNumberReductionStatements());
+			}
+			targetLoop.setLoopLevel(LoopTools.calculateLoopNest(loop).size());
+			targetLoop.setContainIfStatements(LoopTools.containIfStatements(loop));
+			targetLoop.setContainsControlFlowModifierOtherThanBreakStmt(
+					LoopTools.containsControlFlowModifierOtherThanBreakStmt(loop));
+			targetLoop.setContainsWhileLoop(LoopTools.constainsWhileLoop(loop));
+
+			targetLoop.setScalarDependencies(LoopTools.collectScalarDependences(loop).size());
+			targetLoop.setScalarDependeciesArray(LoopTools.collectScalarDependences(loop));
+			targetLoop.setNumberIOOperations(LoopTools.numberIOoperations(loop));
+			// #Operations
+			HashMap<String, Integer> identifiers = LoopTools.getNumberOperations(loop);
+			targetLoop.setNumberFloatOperations(identifiers.get("FLOAT"));
+			targetLoop.setNumberShortOperations(identifiers.get("SHORT"));
+			targetLoop.setNumberIntegerOperations(identifiers.get("INTEGER"));
+			targetLoop.setNumberFunctionCallSF(LoopTools.getNumberParallelizableCall(loop));
+			targetLoop.setNumberFunctionCall(LoopTools.numberFunctionCall(loop));
+			targetLoop.setDataDependenceFree(LoopTools.checkDataDependenceEligibility(loop));
+			// FlowDependences remaining
+
+			logger.info(fileName + "," + targetLoop.toString());
+		}
+	}
+
+	// This methos iterates the Reductions variables of a Loop
+	public int iterateReductionVariableLoop(Map<String, Set<Expression>> reductionsV) {
+		for (Map.Entry<String, Set<Expression>> entry : reductionsV.entrySet()) {
+			String key = entry.getKey();
+			Set<Expression> value = entry.getValue();
+			return value.size();
+		}
+		return 0;
+	}
+
+	public String operandsExpression(Expression expression, String operator) {
+
+		if (expression.getChildren().size() > 0) {
+			for (int i = 0; i < expression.getChildren().size(); i++) {
+				// Expression expre =(Expression) expression.getChildren().get(i);
+				if (expression instanceof BinaryExpression) {
+					BinaryExpression b = (BinaryExpression) expression;
+					BinaryOperator p = b.getOperator();
+					Expression a = (Expression) b.getChildren().get(0);
+					Expression c = (Expression) b.getChildren().get(1);
+					if (p.toString() == "+") {
+						operator += "+,";
+
+					} else if (p.toString() == "-") {
+						operator += "-,";
+
+					} else if (p.toString() == "*") {
+						operator += "*,";
+
+					} else if (p.toString() == "/") {
+						operator += "/,";
+
+					}
+					return operandsExpression(a, operator) + operandsExpression(c, operator);
+				}
+				// operatesExpression( (Expression) expre);
+
+			}
+
+		}
+		if (expression.toString().endsWith("]")) {
+
+		}
+		return operator;
+
+	}
+
+	private void setLogger() {
+
+		FileHandler handler;
+		try {
+			handler = new FileHandler("./out/" + this.getClass().getSimpleName() + ".csv", true);
+
+			Formatter formatter = new Formatter() {
+				@Override
+				public String format(LogRecord record) {
+					StringBuilder sb = new StringBuilder();
+					sb.append(record.getMessage()).append('\n');
+					return sb.toString();
+				}
+			};
+			handler.setFormatter(formatter);
+			handler.setEncoding("utf-8");
+			logger.addHandler(handler);
+		} catch (SecurityException | IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// Add all the outer and inner most loop of a target loop
+	public void addAllLoopNest(Loop loop) {
+		DFIterator<Loop> iter = new DFIterator<Loop>(loop.getBody(), Loop.class);
+		iter.pruneOn(Loop.class);
+		iter.pruneOn(StatementExpression.class);
+		while (iter.hasNext()) {
+			Loop neeLoop = iter.next();
+			addAllLoopNest(neeLoop);
+		}
+		all_loops.add(loop);
+		// System.out.println("-----------\n" + loop.toString() + "-------------\n");
 
 	}
 
@@ -339,7 +491,7 @@ public class ProgramFeatures {
 		Expression result = assignmentExpressionsMaps.get(upperBoundExpression);
 		if (result != null) {
 			upperBoundExpression = result;
-			//numberIterations += upperBoundExpression.toString();
+			// numberIterations += upperBoundExpression.toString();
 			// findNumberIterations(upperBoundExpression, assignmentExpressionsMaps);
 
 		}

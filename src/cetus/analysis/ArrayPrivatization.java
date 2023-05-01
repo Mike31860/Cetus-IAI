@@ -486,6 +486,7 @@ public class ArrayPrivatization extends AnalysisPass {
 			analyzeLoop(neeLoop);
 		}
 
+		//Miguel
 		DFIterator<Statement> ifter = new DFIterator<Statement>(loop.getBody(), Statement.class);
 		int numberStatements = ifter.getList().size() - 1;
 
