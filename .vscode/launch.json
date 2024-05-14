@@ -7,7 +7,7 @@
             "name": "Launch Driver",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-alias=2 -profileLoop-timer C:/Users/Migue/OneDrive/Escritorio/SNU_NPB-1.0.3/NPB3.3-SER-C/CG/cg.c",
+            "args": "-alias=2 -program-analysis /home/miguel/Desktop/FusedMM/FusedMM/fusedMM.c",
             "projectName": "cetus-1.4.4"
         }
     ]

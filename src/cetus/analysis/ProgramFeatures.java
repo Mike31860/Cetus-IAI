@@ -99,20 +99,22 @@ public class ProgramFeatures {
 		setLogger();
 		reductionLoops = ReductionLoops;
 		loops_Features = new ArrayList<AnalysisLoopTarget>();
-		try {
-			File myObj = new File("C:/Users/Migue/OneDrive/Escritorio/WorkSpaceMiguel/bashFiles/Results.txt");
+/* 		try {
+			String currentDir = System.getProperty("user.dir");
+            String filePath = currentDir + File.separator + "Results.txt";
+			File myObj = new File(filePath);
 			if (myObj.createNewFile()) {
 				System.out.println("File created: " + myObj.getName());
-				myWriter = new FileWriter("C:/Users/Migue/OneDrive/Escritorio/WorkSpaceMiguel/bashFiles/Results.txt");
+				myWriter = new FileWriter(filePath);
 			} else {
-				myWriter = new FileWriter("C:/Users/Migue/OneDrive/Escritorio/WorkSpaceMiguel/bashFiles/Results.txt");
+				myWriter = new FileWriter(filePath);
 				System.out.println("File already exists.");
 			}
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		} */
 
 		logger.info(
 				"Application Name, DataSize, LoopId,Number of Iterations, total of Iterations, Number of Loads ,Number of Stores,Number of Instructions,Number of Statements, Loopness Level,"
@@ -121,15 +123,12 @@ public class ProgramFeatures {
 						+
 						",No of Long Operation,No of Short Operation,Big O Notation,No of *,No of -, No of +,No of Function Calls Side effect Free,Data dependence Free,Ratio of Reduction Statements,Ratio of Flow Dependences Remaining ");
 		// debug = PrintTools.getVerbosity();
-<<<<<<< HEAD
 		// ProgramAnalysis(all_loops, loopsAnalysis, ReductionLoops,
 		// LoopReductionStatements, assignmentExpressionsMaps);
 		startAnalysis(program, ((TranslationUnit) program.getChildren().get(0)).getOutputFilename());
-=======
-		startAnalysis(all_loops);
-		ProgramAnalysis(all_loops, loopsAnalysis, ReductionLoops, LoopReductionStatements, assignmentExpressionsMaps);
+	/* 	startAnalysis(all_loops);
+		ProgramAnalysis(all_loops, loopsAnalysis, ReductionLoops, LoopReductionStatements, assignmentExpressionsMaps); */
 
->>>>>>> 45f84f5dc82a5a82ac6e7e459b877c9b51b6ce0d
 	}
 
 	public void startAnalysis(Program program, String fileName) {
