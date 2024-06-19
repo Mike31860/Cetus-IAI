@@ -195,7 +195,7 @@ public class Driver {
 				"Normalize for loops so they begin at 0 and have a step of 1");
 		if ((System.getProperty("os.name").toLowerCase()).indexOf("win") >= 0)
 			options.add(options.UTILITY, "preprocessor",
-					"cpp.exe -I C:/Users/Migue/OneDrive/Escritorio/SNU_NPB-1.0.3/NPB3.3-SER-C/CG", "command",
+					"cpp.exe -I /home/miguel/Desktop/BecnhmarksPaper/NPB3.3-SER-C/CG", "command",
 					"Set the preprocessor command to use");
 		else
 			options.add(options.UTILITY, "preprocessor", "cpp -C -I.", "command",

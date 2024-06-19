@@ -189,10 +189,10 @@ public class ProgramFeatures {
 			targetLoop.setScalarDependeciesArray(LoopTools.collectScalarDependences(loop));
 			targetLoop.setNumberIOOperations(LoopTools.numberIOoperations(loop));
 			// #Operations
-			HashMap<String, Integer> identifiers = LoopTools.getNumberOperations(loop);
+		/* 	HashMap<String, Integer> identifiers = LoopTools.getNumberOperations(loop);
 			targetLoop.setNumberFloatOperations(identifiers.get("FLOAT"));
 			targetLoop.setNumberShortOperations(identifiers.get("SHORT"));
-			targetLoop.setNumberIntegerOperations(identifiers.get("INTEGER"));
+			targetLoop.setNumberIntegerOperations(identifiers.get("INTEGER")); */
 			targetLoop.setNumberFunctionCallSF(LoopTools.getNumberParallelizableCall(loop));
 			targetLoop.setNumberFunctionCall(LoopTools.numberFunctionCall(loop));
 			targetLoop.setDataDependenceFree(LoopTools.checkDataDependenceEligibility(loop));
